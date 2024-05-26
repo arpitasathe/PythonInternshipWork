@@ -1,0 +1,318 @@
+#Name:Arpita Rajendra Sathe.
+#College:JSPM's Rajarshi Shahu College Of Engineering Pune
+#Intern ID:EI02097
+
+#Data Cleaning:(Age Problem)Provide a meaningful treatment to all values where age is less than 18.
+#Code:
+from openpyxl import load_workbook
+
+# Load the Excel file
+file_path = r'C:\Users\HP\Credit.xlsx'
+workbook = load_workbook(file_path)
+worksheet = workbook.active
+
+# Access the specific worksheet 
+worksheet = workbook.worksheets[0]
+
+# Find the column index where age data is located (assuming it's in column C)
+age_column = 3  
+
+# Loop through rows starting from the second row 
+n = 0
+m = 0
+for row in range(2, worksheet.max_row + 1):
+    cell_value = worksheet.cell(row=row, column=age_column).value
+    if cell_value is not None and isinstance(cell_value, float) and cell_value < 18.0:
+        # Apply a treatment to values less than 18 
+        worksheet.cell(row=row, column=age_column).value = 0.0
+    elif cell_value is not None and isinstance(cell_value, float):
+        n += cell_value
+        m += 1
+
+# Calculate the average of non-zero float values
+res = n / m if m != 0 else 0.0
+
+# Update values less than 18 with the calculated average
+for row in range(2, worksheet.max_row + 1):
+    cell_value = worksheet.cell(row=row, column=age_column).value
+    if cell_value is not None and isinstance(cell_value, float) and cell_value < 18.0:
+        worksheet.cell(row=row, column=age_column).value = res
+
+# Save the changes back to the Excel file
+workbook.save(r'C:\Users\HP\Updated_Credit_Banking_Project-1.xlsx')
+
+#Task 1:Monthly spend of each customer.
+#Code:
+import openpyxl
+from datetime import datetime
+
+# Load the existing Excel file
+existing_workbook = openpyxl.load_workbook(r'C:\Users\HP\Credit.xlsx')
+
+#  sheet name is 'Spend'
+existing_sheet = existing_workbook['Spend']
+
+# Create a new sheet in the existing workbook
+new_sheet = existing_workbook.create_sheet(title='TotalSpend')
+
+# Create a dictionary to store total charges for each customer and month
+customer_monthly_totals = {}
+
+# Iterate through rows of existing sheet and calculate total charge for each customer and month
+for row in existing_sheet.iter_rows(min_row=2, values_only=True):  # Skip header row
+    customer = row[1]
+
+    # Check if the value is already a datetime object
+    if isinstance(row[2], datetime):
+        date_obj = row[2]
+    else:
+        date_obj = datetime.strptime(row[2], '%d-%b-%y')
+
+    month_key = date_obj.strftime('%b %y')  # Create a key for the month and year
+
+    customer_month_key = f"{customer}_{month_key}"
+
+    if customer_month_key not in customer_monthly_totals:
+        customer_monthly_totals[customer_month_key] = 0
+
+    # Convert the charge value to an integer before adding
+    customer_monthly_totals[customer_month_key] += int(row[4])
+
+# Add headers to the new sheet
+new_sheet.append(['Customer', 'Month', 'Monthly Spend'])
+
+# Populate the new sheet with calculated total charges
+for key, total_charge in customer_monthly_totals.items():
+    customer, month = key.split('_')
+    new_sheet.append([customer, month, total_charge])
+
+# Save the existing workbook with the new sheet
+existing_workbook.save(r'C:\Users\HP\Updated_Credit_Banking_Project-1.xlsx')
+
+#Task 2:Monthly repayment of each customer.
+#Code:
+import openpyxl
+from datetime import datetime
+
+# Load the existing Excel file
+existing_workbook = openpyxl.load_workbook(r'C:\Users\HP\Credit.xlsx')
+
+# Assuming the sheet name is 'Repayment'
+existing_sheet = existing_workbook['Repayment']
+
+# Create a new workbook for the results
+new_workbook = openpyxl.Workbook()
+
+# Get the active sheet of the new workbook 
+new_sheet = new_workbook.active
+new_sheet.title = 'MonthlyRepayment'  
+
+# Add headers to the new sheet
+new_sheet.append(['Customer', 'Month', 'Monthly Repayment']) 
+
+# Create a dictionary to store monthly repayments for each customer and month
+customer_monthly_repayments = {}
+
+# Iterate through rows of existing sheet and calculate monthly repayment for each customer and month
+for row in existing_sheet.iter_rows(min_row=2, values_only=True):  
+    customer = row[1]
+
+    # Check if the 'Month' value is not None
+    if row[2] is not None:
+        # Check if the value is already a datetime object
+        if isinstance(row[2], datetime):
+            date_obj = row[2]
+        else:
+            # Assuming the date format is 'dd-mmm-yy' 
+            date_obj = datetime.strptime(row[2], '%d-%b-%y')
+
+        month_key = date_obj.strftime('%b %y')  # Create a key for the month and year (e.g., 'Jan 23')
+
+        customer_month_key = f"{customer}_{month_key}"
+
+        if customer_month_key not in customer_monthly_repayments:
+            customer_monthly_repayments[customer_month_key] = 0
+
+        # Add the repayment amount for the month
+        customer_monthly_repayments[customer_month_key] += row[3]
+
+# Populate the new sheet with calculated monthly repayments
+for key, monthly_repayment in customer_monthly_repayments.items():
+    customer, month = key.split('_')
+    new_sheet.append([customer, month, monthly_repayment])
+
+# Save the new workbook
+new_workbook.save(r'C:\Users\HP\MonthlyRepayment.xlsx')  # Save to a new Excel file
+
+#Task 4:People in which segment are spending more money.
+#Code:
+import pandas as pd
+
+# Load data from Excel sheet
+excel_file_path = r'C:\Users\HP\Credit.xlsx'  # Replace with the actual file path
+df_sheet1 = pd.read_excel(excel_file_path, sheet_name='Spend')
+
+# Group by Costomer and sum the amounts
+costomer_spending = df_sheet1.groupby('Customer')['Amount'].sum()
+
+# Find the costomer with the highest total spending
+max_spending_costomer = costomer_spending.idxmax()
+max_spending_amount = costomer_spending.max()
+
+# Print the result
+print(f"The customer {max_spending_costomer} is spending the most with a total spending of {max_spending_amount}")
+
+df_customer_acquisition = pd.read_excel(excel_file_path, sheet_name='Customer Acqusition')
+
+# Find the Segment for Customer max_spending_costomer
+customer_max_spending_costomer_segment = df_customer_acquisition[df_customer_acquisition['Customer'] == max_spending_costomer]['Segment'].iloc[0]
+
+# Print the result
+print(f"The 'Segment' for 'Customer' {max_spending_costomer} is: {customer_max_spending_costomer_segment}")
+
+
+Output:The customer A22 is spending the most with a total spending of 9637818.67174187
+The 'Segment' for 'Customer' A22 is: Self Employed
+
+#Task 5:Which age group is spending more money?
+#Code:
+import pandas as pd
+
+# Load the MonSpend Excel File
+mons_spend_df = pd.read_excel(r'C:\Users\HP\MonthlySpend.xlsx')
+
+# Load the Project1 Excel File 
+project1_df = pd.read_excel(r'C:\Users\HP\Updated_Credit_Banking_Project-1.xlsx')
+
+# Merge the two datasets on the "Customer" column
+merged_df = pd.merge(mons_spend_df, project1_df[['Customer', 'Age']], on='Customer', how='left')
+
+# Define age group categories
+age_bins = [18, 30, 50, 70, 100]
+age_labels = ['18-30', '31-50', '51-70', '71-100']
+
+# Categorize the 'Age' column into age groups
+merged_df['Age Group'] = pd.cut(merged_df['Age'], bins=age_bins, labels=age_labels, right=False)
+
+# Group by age group and calculate total spending for each group
+age_group_spending = merged_df.groupby('Age Group')['Monthly Spend'].sum().reset_index()
+
+# Find the age group with the highest total spending
+max_spending_age_group = age_group_spending.loc[age_group_spending['Monthly Spend'].idxmax()]
+
+print("Age group with the highest total spending:")
+print(max_spending_age_group)
+
+output:Age group with the highest total spending:
+Age Group            31-50
+Monthly Spend    154279369
+
+#Task 6:Which is the most profitable segment?
+#Code:
+import pandas as pd
+
+# Read data from Excel file
+df1 = pd.read_excel(r'C:\Users\HP\Updated_Credit_Banking_Project-1.xlsx', sheet_name="Customer Acqusition")
+df2 = pd.read_excel(r'C:\Users\HP\Updated_Credit_Banking_Project-1.xlsx', sheet_name="Spend")
+df3 = pd.read_excel(r'C:\Users\HP\Updated_Credit_Banking_Project-1.xlsx', sheet_name="Repayment")
+
+# Merge DataFrames to combine information
+merged_df = pd.merge(df1, df2, on='Customer')
+merged_df = pd.merge(merged_df, df3, on=['Customer', 'Month'])
+
+# Calculate total spending for each segment
+total_spending_by_segment = merged_df.groupby('Segment')['Amount_y'].sum().reset_index()
+
+# Find the most profitable segment
+most_profitable_segment = total_spending_by_segment.loc[total_spending_by_segment['Amount_y'].idxmax()]
+
+print("Most Profitable Segment:", most_profitable_segment['Segment'])
+
+Output:Most Profitable Segment: Normal Salary
+
+#Task 7:In which category the customers are spending more money?
+#Code:
+import pandas as pd
+
+# Read the data from the Excel files
+credit_data = pd.read_excel(r'C:\Users\HP\Updated_Credit_Banking_Project-1.xlsx', sheet_name='Customer Acqusition')
+amount_data = pd.read_excel(r'C:\Users\HP\Updated_Credit_Banking_Project-1.xlsx', sheet_name='Spend')
+
+# Merge the two dataframes on the 'Customer' column
+merged_data = pd.merge(credit_data, amount_data, on='Customer')
+
+# Create a new column 'Category_Group' based on existing 'Type' values
+category_mapping = {
+    'AIR TICKET': 'Transport',
+    'BUS TICKET': 'Transport',
+    'TRAIN TICKET': 'Transport',
+    'MOVIE TICKET': 'Ticket',
+    'PETRO': 'Transport',
+    'CAR': 'Transport',
+    'BIKE': 'Transport',
+    'AUTO': 'Transport',
+    'JEWELLERY':'Shopping',
+    'SHOPPING' :'Shopping',
+    'CLOTHES'  : 'Shopping',
+     'SANDALS': 'Shopping',
+      'FOOD': 'Food',
+      'RENTAL': 'RENTAL',
+      'CAMERA': 'Shopping'
+    # Add more mappings as needed
+}
+
+merged_data['Category_Group'] = merged_data['Type'].map(category_mapping)
+
+# Group by 'Category_Group' and calculate total spending
+category_group_spending = merged_data.groupby('Category_Group')['Amount'].sum()
+
+# Find the category group with the highest total spending
+most_spent_category_group = category_group_spending.idxmax()
+
+print("Category group with the highest spending:", most_spent_category_group)
+
+Output:Category group with the highest spending: Transport
+
+#Task 8:Impose an interest rate of 2.9% for each customer for any due amount.
+#Code:
+import pandas as pd
+
+# Read the MonthlySpend file
+spend_df = pd.read_excel('MonthlySpend.xlsx')
+
+# Read the MonthlyRepayment file
+repayment_df = pd.read_excel('MonthlyRepayment.xlsx')
+
+# Merge the two dataframes on 'Customer' and 'Month'
+merged_df = pd.merge(spend_df, repayment_df, on=['Customer', 'Month'], how='inner', suffixes=('_Spend', '_Repayment'))
+
+# Calculate the due amount
+merged_df['Due_Amount'] = merged_df['Monthly Spend'] - merged_df['Monthly Repayment']
+merged_df['Due_Amount'] = merged_df['Due_Amount'].clip(lower=0)  # Replace negative values with 0
+
+# Calculate interest
+interest_rate = 0.029
+merged_df['Interest'] = merged_df['Due_Amount'] * interest_rate
+
+# Create a new dataframe with relevant columns
+result_df = merged_df[['Customer', 'Month', 'Monthly Spend', 'Monthly Repayment', 'Due_Amount', 'Interest']]
+
+# Write the result to a new Excel sheet
+result_df.to_excel('InterestCalculation.xlsx', index=False)
+
+#Task 9:Monthly profit for the bank.
+#Code:
+import pandas as pd
+
+# Read the Excel file
+data = pd.read_excel("InterestCalculation.xlsx")
+
+# Calculate monthly profit
+data['Monthly Profit'] = data['Interest']
+
+# Create a new DataFrame to store monthly profit data
+monthly_profit_data = data.groupby('Month')['Monthly Profit'].sum().reset_index()
+
+# Save the monthly profit data to a new Excel file
+monthly_profit_data.to_excel("MonthlyProfit.xlsx", index=False)
+
